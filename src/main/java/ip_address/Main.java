@@ -1,15 +1,16 @@
 package ip_address;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Scanner;
-import java.util.regex.Pattern;
 
 public class Main {
-    private static final String IP_PATTERN ="^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\W"
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\W"
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\W"
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
+
+    private static final long TARG_0 = 256 * 256 * 256;
+    private static final long TARG_1 = 256 * 256;
+    private static final long TARG_2 = 256;
+
     public static void main(String[] args) {
 
         Scanner scanner = new Scanner(System.in);
@@ -17,48 +18,69 @@ public class Main {
         String lastIp = scanner.nextLine();
         scanner.close();
 
-        Pattern pattern = Pattern.compile(IP_PATTERN);
-
-        if (pattern.matcher(firstIp).matches() & pattern.matcher(lastIp).matches()) {
-            ArrayList<String> list =  ipRange(firstIp, lastIp);
+        ArrayList<String> list;
+        try {
+            list = ipRange(firstIp, lastIp);
             for (String ip : list)
                 System.out.println(ip);
-
-        } else {
+        } catch (UnknownHostException e) {
             System.out.println("is not validate ip");
+            e.printStackTrace();
         }
     }
-    private static ArrayList<String> ipRange(String firstIp, String lastIp) {
-        ArrayList<String> result = new ArrayList<>();
-        int[] firstIpArray = ipToArray(firstIp);
-        int[] lastIpArray = ipToArray(lastIp);
-        int[] rangeIpArray = {Math.abs(firstIpArray[0] - lastIpArray[0]),
-                Math.abs(firstIpArray[1] - lastIpArray[1]),
-                Math.abs(firstIpArray[2] - lastIpArray[2]),
-                Math.abs(firstIpArray[3] - lastIpArray[3]),
-        };
 
-        if (firstIp.compareTo(lastIp) < 0) {
-            for (int i = 1; i < rangeIpArray[3]; i++) {
-                int[] ip_address = {firstIpArray[0], firstIpArray[1], firstIpArray[2], (firstIpArray[3] + i)};
-                result.add(ipString(ip_address));
+    private static ArrayList<String> ipRange(String firstIp, String lastIp) throws UnknownHostException {
+        ArrayList<String> list = new ArrayList<>();
+        InetAddress ip1 = InetAddress.getByName(firstIp);
+        InetAddress ip2 = InetAddress.getByName(lastIp);
+        long longFirstId = Main.ipToLong(ip1);
+        long longLastId = Main.ipToLong(ip2);
+        long rangeId = Math.abs(longFirstId - longLastId);
+
+        if (longLastId > longFirstId) {
+            for (long i = 1; i < rangeId; i++) {
+                list.add(Main.longToIp(longFirstId + i));
             }
-        } else if (firstIp.compareTo(lastIp) > 0){
-            for (int i = 1; i < rangeIpArray[3]; i++) {
-                int[] ip_address = {lastIpArray[0], lastIpArray[1], lastIpArray[2], (lastIpArray[3] + i)};
-                result.add(ipString(ip_address));
+        } else {
+            for (long i = 1; i < rangeId; i++) {
+                list.add(Main.longToIp(longLastId + i));
             }
-
-        } else
-            System.out.println("first ip == last ip");
-
-        return result;
+        }
+        return list;
     }
-    private static int[] ipToArray(String ip) {
-        return Arrays.stream(ip.split("\\W")).mapToInt(Integer::parseInt).toArray();
 
+    static long ipToLong(InetAddress ipAddress) {
+        byte ipAddressToByteArray[] = ipAddress.getAddress();
+
+        int firstByte = ipAddressToByteArray[0];
+        if (firstByte < 0) {
+            firstByte += 256;
+        }
+        int secondByte = ipAddressToByteArray[1];
+        if (secondByte < 0) {
+            secondByte += 256;
+        }
+        int threeByte = ipAddressToByteArray[2];
+        if (threeByte < 0) {
+            threeByte += 256;
+        }
+        int fourByte = ipAddressToByteArray[3];
+        if (fourByte < 0) {
+            fourByte += 256;
+        }
+        return (TARG_0 * firstByte) + (TARG_1 * secondByte) + (TARG_2 * threeByte) + fourByte;
     }
-    private static String ipString (int[] ip) {
-        return new StringBuilder().append(ip[0]).append(".").append(ip[1]).append(".").append(ip[2]).append(".").append(ip[3]).toString();
+
+    static String longToIp(long ip) {
+
+        long a = ip;
+        long firstLong = a / TARG_0;
+        a -= (firstLong * TARG_0);
+        long secondLong = a / TARG_1;
+        a -= (secondLong * TARG_1);
+        long threeLong = a / TARG_2;
+        a -= (threeLong * TARG_2);
+        long fourLong = a;
+        return firstLong + "." + secondLong + "." + threeLong + "." + fourLong;
     }
 }
