@@ -22,4 +22,8 @@ class BookData {
 
         book.put(name, phoneNumbers);
     }
+
+    Map<String, ArrayList<String>> getBook() {
+        return book;
+    }
 }
